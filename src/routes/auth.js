@@ -103,7 +103,25 @@ router.post('/send-phone', async (req, res) => {
     const body = await resp.json();
     const smsSent = body.view?.code === 'EnterOtp';
 
-    res.json({ success: smsSent, processId: session.processId, desc: body.data?.desc, view: body.view?.code, body });
+    // Surface WHY Kaspi declined so callers can tell a phone-input rejection (fixable by the user) from a
+    // system/config block that is NOT about the phone — e.g. OldVersionToUpdate (app version below Kaspi's
+    // minimum). Kaspi puts the reason in the on-open alarm (version/system gates) or an error object (phone).
+    const kaspiErr =
+      body.view?.onOpenAlarm?.error || body.error || body.data?.error || null;
+    const errorCode = smsSent ? undefined : kaspiErr?.code;
+    const errorMessage = smsSent
+      ? undefined
+      : kaspiErr?.label || kaspiErr?.desc || kaspiErr?.description || body.data?.desc;
+
+    res.json({
+      success: smsSent,
+      processId: session.processId,
+      desc: body.data?.desc,
+      view: body.view?.code,
+      errorCode,
+      errorMessage,
+      body,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
