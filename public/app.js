@@ -1,4 +1,4 @@
-// ─── Kaspi Pay — Frontend App ───
+// ─── Ristart · Счета — Frontend App ───
 
 const API = '';
 
@@ -91,7 +91,6 @@ const tryRestoreSession = async () => {
   clearSession();
   return false;
 };
-
 
 const formatPhone = (digits) => {
   // Format up to 10 digits as "XXX XXX XX XX"
@@ -238,7 +237,6 @@ const logout = async () => {
   setAuthStep(1);
   showAuthMsg('', '');
 };
-
 
 const switchTab = (tab) => {
   $('invoiceTab').classList.toggle('hidden', tab !== 'invoice');

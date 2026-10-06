@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kaspi Pay</title>
+    <title>Ristart · Счета</title>
     <style>
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+      }
+      :root {
+        --accent: #4f46e5;
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -22,7 +25,7 @@
       }
       h1 {
         text-align: center;
-        color: #e31e24;
+        color: var(--accent);
         font-size: 24px;
         margin: 16px 0;
       }
@@ -55,7 +58,7 @@
         outline: none;
       }
       input:focus {
-        border-color: #e31e24;
+        border-color: var(--accent);
       }
       .btn {
         width: 100%;
@@ -68,7 +71,7 @@
         margin-top: 12px;
       }
       .btn-primary {
-        background: #e31e24;
+        background: var(--accent);
         color: #fff;
       }
       .btn-primary:disabled {
@@ -164,7 +167,7 @@
         background: #ddd;
       }
       .step-dot.active {
-        background: #e31e24;
+        background: var(--accent);
       }
       .step-dot.done {
         background: #4caf50;
@@ -243,7 +246,7 @@
         border: none;
       }
       .tab.active {
-        background: #e31e24;
+        background: var(--accent);
         color: #fff;
       }
       .user-info {
@@ -255,7 +258,7 @@
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        background: #e31e24;
+        background: var(--accent);
         color: #fff;
         display: flex;
         align-items: center;
@@ -278,7 +281,7 @@
   </head>
   <body>
     <div class="container">
-      <h1>🏦 Kaspi Pay</h1>
+      <h1>Ristart · Счета</h1>
 
       <!-- ═══ AUTH SCREEN ═══ -->
       <div id="authScreen">
@@ -315,9 +318,9 @@
           <div id="authStep3" class="hidden">
             <h2>Завершение входа...</h2>
             <p style="text-align: center; color: #888; margin: 20px 0">
-              Подключение к Kaspi Pay<span
+              Подключение<span
                 class="loader"
-                style="border-color: #e31e24; border-top-color: transparent"
+                style="border-color: var(--accent); border-top-color: transparent"
               ></span>
             </p>
           </div>
