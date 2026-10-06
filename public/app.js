@@ -169,7 +169,17 @@ const sendPhone = async () => {
       $('otpDesc').textContent = resp.desc || `SMS отправлен на +7${phone}`;
       setAuthStep(2);
     } else {
-      showAuthMsg(`Ошибка: ${resp.body?.data?.desc || JSON.stringify(resp.body)}`, 'err');
+      // Номер не кассира Kaspi отдаёт не ошибкой, а другим экраном: владельцу — вход по паролю Kaspi.kz, без Kaspi Pay — регистрацию.
+      const notCashier = {
+        ViewEnterLoginPassword:
+          'Этот номер не кассир Kaspi Pay: Kaspi просит пароль Kaspi.kz, так входит владелец. Добавьте кассира в Kaspi Pay → «Сотрудники» и войдите его номером.',
+        MobileOrgRegistration:
+          'Этот номер не зарегистрирован в Kaspi Pay: Kaspi предлагает зарегистрировать организацию. Войдите номером кассира.',
+      }[resp.body?.meta?.sn];
+      showAuthMsg(
+        notCashier || `Ошибка: ${resp.errorMessage || resp.body?.data?.desc || JSON.stringify(resp.body)}`,
+        'err',
+      );
     }
   } catch (e) {
     showAuthMsg(`Ошибка сети: ${e.message}`, 'err');
