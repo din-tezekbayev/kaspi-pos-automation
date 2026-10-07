@@ -349,6 +349,23 @@
           </div>
         </div>
 
+        <!-- API token for external systems -->
+        <details class="card" id="apiTokenCard">
+          <summary style="cursor: pointer; font-weight: 600">API-токен для подключения системы</summary>
+          <p style="font-size: 13px; color: #666; margin: 12px 0 8px">
+            Передавайте в заголовке <code>Authorization: Bearer &lt;токен&gt;</code>. Токен даёт право выставлять
+            счета от имени этого кассира — храните его как пароль. Он может перестать работать, если кассир войдёт
+            заново здесь или в приложении Kaspi Pay — тогда скопируйте новый.
+          </p>
+          <textarea
+            id="apiToken"
+            readonly
+            rows="4"
+            style="width: 100%; font-family: monospace; font-size: 12px; word-break: break-all; resize: none"
+          ></textarea>
+          <button class="btn btn-secondary" id="btnCopyToken" onclick="copyApiToken()">Скопировать токен</button>
+        </details>
+
         <!-- Tabs -->
         <div class="tabs">
           <button class="tab active" id="tabInvoice" onclick="switchTab('invoice')">Счёт</button>

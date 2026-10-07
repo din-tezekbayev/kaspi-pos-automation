@@ -17,6 +17,22 @@ app.use(express.static(path.join(ROOT_DIR, 'public')));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+// API-токен для внешних систем: «Authorization: Bearer <токен>» вместо трёх заголовков сессии.
+// Токен — base64url от JSON {tokenSN, profileId, vtokenSecret}, его выдаёт веб-интерфейс после входа.
+app.use('/api', (req, res, next) => {
+  const bearer = /^Bearer\s+(\S+)$/i.exec(req.headers.authorization || '')?.[1];
+  if (!bearer) return next();
+  try {
+    const { tokenSN, profileId, vtokenSecret } = JSON.parse(Buffer.from(bearer, 'base64url').toString('utf8'));
+    req.headers['x-token-sn'] = tokenSN;
+    req.headers['x-profile-id'] = String(profileId ?? '');
+    req.headers['x-vtoken-secret'] = vtokenSecret;
+  } catch {
+    return res.status(401).json({ error: 'Invalid API token. Copy a fresh one from the web UI.' });
+  }
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/invoice', invoiceRoutes);
 app.use('/api/qr', qrRoutes);

@@ -224,6 +224,22 @@ const showMainScreen = (data) => {
     $('userOrg').textContent = data.orgName || '—';
     $('userAvatar').textContent = (data.orgName || 'K')[0].toUpperCase();
   }
+  $('apiToken').value = apiToken();
+};
+
+// Тот же набор, что в sessionHeaders, одной строкой — сервер раскладывает её обратно (server.js).
+const apiToken = () => {
+  const { tokenSN, profileId, vtokenSecret } = getSession();
+  return btoa(JSON.stringify({ tokenSN, profileId, vtokenSecret }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+};
+
+const copyApiToken = async () => {
+  await navigator.clipboard.writeText($('apiToken').value);
+  $('btnCopyToken').textContent = 'Скопировано';
+  setTimeout(() => ($('btnCopyToken').textContent = 'Скопировать токен'), 1500);
 };
 
 const logout = async () => {
@@ -715,6 +731,7 @@ Object.assign(window, {
   verifyOtp,
   resetAuth,
   logout,
+  copyApiToken,
   switchTab,
   createInvoice,
   refreshInvoice,
