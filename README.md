@@ -39,13 +39,14 @@
 - 📡 **События:** `payment.success` · `payment.failed` · `payment.expired` · `payment.lost`
 - ⚙️ **Настройка:** файл `webhooks.json` (см. [`webhooks.example.json`](./webhooks.example.json))
 - 🔐 **Подпись:** HMAC SHA-256
-- 🔄 **Retry:** до 3 попыток с нарастающей задержкой
+- 🔄 **Retry:** до 20 попыток с backoff; недоставленные события сохраняются для ручного повтора
+- 💾 **Хранилище:** SQLite (`payments.sqlite`), атомарная запись статуса и уведомлений; один процесс приложения на БД
 
 > 📖 Подробнее — в [документации API](./docs/API.md#webhooks--уведомления).
 
 ## Требования
 
-- Node.js ≥ 20.6
+- Node.js ≥ 22.13
 
 ## Быстрый старт
 

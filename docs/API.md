@@ -243,6 +243,8 @@ curl "http://localhost:3000/api/invoice/client-info?phoneNumber=77001234567" \
 
 Создание счёта на оплату.
 
+Для асинхронного workflow передавайте `Idempotency-Key` (стабильный ключ операции) и `X-Correlation-ID` либо `correlation_id` в теле. С тем же ключом возвращается сохранённый HTTP-ответ; изменённые параметры дают 409. При неизвестном результате внешнего запроса повторное создание запрещено (409): нужна сверка статуса/истории. Ключ сохраняется в SQLite до вызова Kaspi и ограничен аккаунтом. Корреляция возвращается в webhook.
+
 **Тело запроса:**
 
 | Поле | Тип | Обязательный | Описание |
@@ -600,6 +602,9 @@ curl "http://localhost:3000/api/session/check" \
 ```json
 {
   "event": "payment.success",
+  "event_id": "stable-event-id",
+  "correlation_id": "workflow-operation-uuid",
+  "accountId": "account-profile-id",
   "paymentId": "123456",
   "type": "qr",
   "status": "Processed",
@@ -616,6 +621,9 @@ curl "http://localhost:3000/api/session/check" \
 | Поле | Тип | Описание |
 |---|---|---|
 | `event` | `string` | Название события (`payment.success`, `payment.failed`, `payment.expired`, `payment.lost`) |
+| `event_id` | `string` | Стабильный идентификатор; не меняется при доставке повторно |
+| `correlation_id` | `string\|null` | Идентификатор исходной workflow-операции для invoice |
+| `accountId` | `string\|null` | Профиль продавца из исходной сессии |
 | `paymentId` | `string` | ID платежа (QR operationId или invoice operationId) |
 | `type` | `string` | Тип платежа: `qr` или `invoice` |
 | `status` | `string` | Финальный статус от Kaspi API |
@@ -625,9 +633,11 @@ curl "http://localhost:3000/api/session/check" \
 | `receiptUrl` | `string\|null` | Ссылка на чек |
 | `orderNumber` | `string\|null` | Номер заказа |
 | `data` | `object` | Полные данные ответа от Kaspi API |
-| `timestamp` | `string` | Время отправки уведомления (ISO 8601) |
+| `timestamp` | `string` | Время фиксации события (ISO 8601); сохраняется при повторной доставке |
 
 ### Подпись (HMAC)
+
+Для SoftIT задайте `"signatureVersion": 2` в записи `webhooks.json` и секрет не короче 32 символов. Тогда подписываются исходные байты `X-Webhook-Timestamp + '.' + rawBody`. Timestamp — Unix-секунды времени **попытки доставки**, получатель проверяет сдвиг часов (SoftIT: 300 секунд). Также передаётся `X-Webhook-Id`, равный event_id. При повторе обновляются timestamp и подпись, содержимое события и event_id не меняются. Без signatureVersion:2 сохраняется прежняя подпись только тела, показанная ниже.
 
 Каждый запрос подписывается HMAC SHA-256 с использованием `secret` из конфигурации вебхука. Подпись передаётся в заголовке:
 
@@ -652,7 +662,7 @@ const verifySignature = (body, signature, secret) => {
 };
 
 // В обработчике запроса:
-const rawBody = JSON.stringify(req.body); // или используйте raw body
+const rawBody = req.rawBody; // сохраните точные байты тела до JSON parsing
 const sig = req.headers['x-webhook-signature'];
 if (!verifySignature(rawBody, sig, 'your-webhook-secret')) {
   return res.status(401).send('Invalid signature');
@@ -661,17 +671,13 @@ if (!verifySignature(rawBody, sig, 'your-webhook-secret')) {
 
 ### Повторные попытки (Retry)
 
-Если доставка вебхука не удалась (ошибка сети, таймаут, HTTP-ошибка), система выполняет до **3 попыток** с нарастающей задержкой:
-
-| Попытка | Задержка |
-|---|---|
-| 1-я (первая) | Немедленно |
-| 2-я | 5 секунд |
-| 3-я | 30 секунд |
+Если доставка вебхука не удалась (ошибка сети, таймаут, любой HTTP non-2xx), система выполняет до **20 попыток** с экспоненциальной задержкой от 5 секунд, до часа, плюс jitter. Фактический запуск происходит в очередном цикле polling.
 
 - Таймаут запроса: **10 секунд**.
-- Очередь повторных попыток сохраняется в `webhook-retries.json` и переживает перезапуск сервера.
-- После 3 неудачных попыток уведомление отбрасывается (логируется ошибка).
+- Платёж и outbox фиксируются атомарно в SQLite (`payments.sqlite`, настройка PAYMENT_DB_PATH); очередь переживает перезапуск сервера. Node >=22.13, один процесс приложения на БД, постоянный локальный volume.
+- Старые tracked-payments.json/webhook-retries.json импортируются один раз, исходные файлы остаются для проверки/отката.
+- После исчерпания попыток уведомление сохраняется как failed. С авторизацией сессии: GET `/api/invoice/webhook-deliveries` для диагностики своего profileId; POST `/api/invoice/webhook-deliveries/<id>/replay` для повторного запуска failed с прежним event_id. Секреты в диагностике не возвращаются.
+- Потеря сессии/неизвестный новый статус означает payment.lost, а не доказанный отказ оплаты.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Build & Configuration
 
-- **Node.js ≥ 20.6** required (ES modules via `"type": "module"`).
+- **Node.js ≥ 22.13** required (ES modules via `"type": "module"`).
 - Create `.env` with `TOKEN_SECRET_KEY` (64-char hex, 32 bytes) before first run — see `.env.example`.
 - On first `npm start`, `keypair.json` and `device.json` are auto-generated (gitignored).
 - Regenerate via `npm run regen:keypair` / `npm run regen:device` (invalidates sessions).
@@ -12,6 +12,7 @@
 - **Entry point**: `server.js` — Express, routes under `/api/*`, static `public/`.
 - **Source**: `src/config.js`, `src/crypto.js`, `src/helpers.js`, `src/session.js`.
 - **Routes**: `src/routes/{auth,invoice,qr,history,refund}.js`.
+- **Durable operations**: `src/paymentStore.js` uses SQLite (`payments.sqlite`) for tracked payments, webhook outbox and invoice idempotency. Run one application process per database; keep the DB and WAL on a persistent local volume.
 - **Stateless after auth** — temp in-memory `Map` only during 3-step SMS flow; after that, session data lives on the client side (encrypted headers).
 
 ## Code Style

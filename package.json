@@ -23,7 +23,7 @@
     "invoice"
   ],
   "engines": {
-    "node": ">=20.6.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "start": "node server.js",
